@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+
 void read_sensor(const char *filename)
 {
     FILE *file = fopen(filename, "r");
@@ -30,6 +31,49 @@ int main(void)
     }
 
     printf("Storage directory is ready\n");
+    pid_t pid;
+
+   
+    pid = fork();
+
+    if (pid < 0) {
+        perror("fork mem_sensor");
+        return 1;
+    }
+
+    if (pid == 0) {
+        execl("./bin/mem_sensor", "mem_sensor", (char *)NULL);
+        perror("execl mem_sensor");
+        _exit(1);
+    }
+
+    
+    pid = fork();
+
+    if (pid < 0) {
+        perror("fork cpu_sensor");
+        return 1;
+    }
+
+    if (pid == 0) {
+        execl("./bin/cpu_sensor", "cpu_sensor", (char *)NULL);
+        perror("execl cpu_sensor");
+        _exit(1);
+    }
+
+    
+    pid = fork();
+
+    if (pid < 0) {
+        perror("fork proc_sensor");
+        return 1;
+    }
+
+    if (pid == 0) {
+        execl("./bin/proc_sensor", "proc_sensor", (char *)NULL);
+        perror("execl proc_sensor");
+        _exit(1);
+    }
     while(1){
 
         printf("\n=== MEMORY ===\n");
