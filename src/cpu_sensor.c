@@ -36,9 +36,9 @@ int main(void)
 
         fclose(output);
 
-        printf("Load 1 min: %.2f\n", load1);
-        printf("Load 5 min: %.2f\n", load5);
-        printf("Load 15 min: %.2f\n", load15);
+       // printf("Load 1 min: %.2f\n", load1);
+       // printf("Load 5 min: %.2f\n", load5);
+       // printf("Load 15 min: %.2f\n", load15);
         sleep(5);
     }
     return 0;

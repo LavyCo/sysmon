@@ -44,7 +44,7 @@ int main(void)
 
         fclose(output);
 
-        printf("Active processes: %d\n", count);
+       // printf("Active processes: %d\n", count);
         sleep(5);
     }
     return 0;

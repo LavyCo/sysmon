@@ -37,11 +37,11 @@ int main(void)
         }
 
         fclose(file);
-        printf("MemTotal: %ld kB\n", memTotal);
-        printf("MemFree: %ld kB\n", memFree);
-        printf("MemAvailable: %ld kB\n", memAvailable);
-        printf("SwapTotal: %ld kB\n", swapTotal);
-        printf("SwapFree: %ld kB\n", swapFree);
+       // printf("MemTotal: %ld kB\n", memTotal);
+      //  printf("MemFree: %ld kB\n", memFree);
+      //  printf("MemAvailable: %ld kB\n", memAvailable);
+       // printf("SwapTotal: %ld kB\n", swapTotal);
+       // printf("SwapFree: %ld kB\n", swapFree);
 
         FILE *output = fopen("/tmp/sysmon/mem.dat", "w");
 
