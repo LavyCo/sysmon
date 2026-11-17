@@ -1,15 +1,24 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <sysmon.h>
 
-int main(void)
+void *mem_sensor_thread(void *arg)
 {
+    SystemState *state = (SystemState *)arg;
     while (1) {
+        pthread_mutex_lock(&state->lock);
+        int running = state->running;
+        pthread_mutex_unlock(&state->lock);
+
+        if (!running) {
+            break;
+        }
         FILE *file = fopen("/proc/meminfo", "r");
 
         if (file == NULL) {
          perror("fopen");
-            return 1;
+            return NULL;
         }
 
         char line[256];
@@ -37,27 +46,18 @@ int main(void)
         }
 
         fclose(file);
-       // printf("MemTotal: %ld kB\n", memTotal);
-      //  printf("MemFree: %ld kB\n", memFree);
-      //  printf("MemAvailable: %ld kB\n", memAvailable);
-       // printf("SwapTotal: %ld kB\n", swapTotal);
-       // printf("SwapFree: %ld kB\n", swapFree);
+        pthread_mutex_lock(&state->lock);
 
-        FILE *output = fopen("/tmp/sysmon/mem.dat", "w");
+        state->mem_total = memTotal;
+        state->mem_free = memFree;
+        state->mem_avail = memAvailable;
+        state->swap_total = swapTotal;
+        state->swap_free = swapFree;
 
-        if (output == NULL) {
-            perror("fopen");
-            return 1;
-        }
+        pthread_mutex_unlock(&state->lock);
 
-        fprintf(output, "MemTotal: %ld kB\n", memTotal);
-        fprintf(output, "MemFree: %ld kB\n", memFree);
-        fprintf(output, "MemAvailable: %ld kB\n", memAvailable);
-        fprintf(output, "SwapTotal: %ld kB\n", swapTotal);
-        fprintf(output, "SwapFree: %ld kB\n", swapFree);
-
-        fclose(output);
-        sleep(5);
+        sleep(UPDATE_INTERVAL);
     }
-    return 0;
+     return NULL;
+
 }

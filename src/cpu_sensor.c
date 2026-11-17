@@ -1,14 +1,23 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <sysmon.h>
 
-int main(void)
+void *cpu_sensor_thread(void *arg)
 {
-    while(1){
+    SystemState *state = (SystemState *)arg;
+    while (1) {
+        pthread_mutex_lock(&state->lock);
+        int running = state->running;
+        pthread_mutex_unlock(&state->lock);
+
+        if (!running) {
+            break;
+        }
         FILE *file = fopen("/proc/loadavg", "r");
 
         if (file == NULL) {
             perror("fopen");
-            return 1;
+            return NULL;
         }
 
         double load1 = 0;
@@ -18,28 +27,27 @@ int main(void)
         if (fscanf(file, "%lf %lf %lf", &load1, &load5, &load15) != 3) {
             printf("Error reading CPU load\n");
             fclose(file);
-            return 1;
+            return NULL;
         }
 
         fclose(file);
+        pthread_mutex_lock(&state->lock);
 
-        FILE *output = fopen("/tmp/sysmon/cpu.dat", "w");
+        state->load1 = load1;
+        state->load5 = load5;
+        state->load15 = load15;
 
-        if (output == NULL) {
-            perror("fopen");
-            return 1;
+        if (load1 > 1.50) {
+             state->alert_pending = 1;
+            pthread_cond_signal(&state->alert_cond);
         }
 
-        fprintf(output, "Load1: %.2f\n", load1);
-        fprintf(output, "Load5: %.2f\n", load5);
-        fprintf(output, "Load15: %.2f\n", load15);
+        pthread_mutex_unlock(&state->lock);
 
-        fclose(output);
 
-       // printf("Load 1 min: %.2f\n", load1);
-       // printf("Load 5 min: %.2f\n", load5);
-       // printf("Load 15 min: %.2f\n", load15);
-        sleep(5);
+
+       
+        sleep(UPDATE_INTERVAL);
     }
-    return 0;
+    return NULL;
 }
