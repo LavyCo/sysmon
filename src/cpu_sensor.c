@@ -1,13 +1,22 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sysmon_ipc.h>
 
 int main(void)
 {
+    int fd = open(CPU_FIFO_PATH, O_WRONLY);
+
+    if (fd == -1) {
+        perror("open FIFO");
+        return 1;
+    }
     while(1){
         FILE *file = fopen("/proc/loadavg", "r");
 
         if (file == NULL) {
             perror("fopen");
+            close(fd);
             return 1;
         }
 
@@ -18,28 +27,34 @@ int main(void)
         if (fscanf(file, "%lf %lf %lf", &load1, &load5, &load15) != 3) {
             printf("Error reading CPU load\n");
             fclose(file);
+            close(fd);
             return 1;
         }
 
         fclose(file);
 
-        FILE *output = fopen("/tmp/sysmon/cpu.dat", "w");
+        CpuData data;
 
-        if (output == NULL) {
-            perror("fopen");
+        data.load1 = load1;
+        data.load5 = load5;
+        data.load15 = load15;
+
+        ssize_t bytes = write(fd, &data, sizeof(data));
+
+        if (bytes == -1) {
+            perror("write");
+            close(fd);
             return 1;
         }
 
-        fprintf(output, "Load1: %.2f\n", load1);
-        fprintf(output, "Load5: %.2f\n", load5);
-        fprintf(output, "Load15: %.2f\n", load15);
+        if (bytes != sizeof(data)) {
+            fprintf(stderr, "Incomplete CPU data write\n");
+            close(fd);
+            return 1;
+        }
 
-        fclose(output);
-
-       // printf("Load 1 min: %.2f\n", load1);
-       // printf("Load 5 min: %.2f\n", load5);
-       // printf("Load 15 min: %.2f\n", load15);
-        sleep(5);
+        sleep(1);
     }
+    close(fd);
     return 0;
 }

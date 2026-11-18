@@ -1,9 +1,15 @@
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <sysmon_ipc.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    int fd = STDOUT_FILENO;
+
+    if (argc > 1) {
+        fd = atoi(argv[1]);
+    }
     while (1) {
         FILE *file = fopen("/proc/meminfo", "r");
 
@@ -37,27 +43,29 @@ int main(void)
         }
 
         fclose(file);
-       // printf("MemTotal: %ld kB\n", memTotal);
-      //  printf("MemFree: %ld kB\n", memFree);
-      //  printf("MemAvailable: %ld kB\n", memAvailable);
-       // printf("SwapTotal: %ld kB\n", swapTotal);
-       // printf("SwapFree: %ld kB\n", swapFree);
+        MemData data;
 
-        FILE *output = fopen("/tmp/sysmon/mem.dat", "w");
+        data.mem_total = memTotal;
+        data.mem_free = memFree;
+        data.mem_avail = memAvailable;
+        data.swap_total = swapTotal;
+        data.swap_free = swapFree;
 
-        if (output == NULL) {
-            perror("fopen");
+        ssize_t bytes = write(fd, &data, sizeof(data));
+
+        if (bytes == -1) {
+            perror("write");
             return 1;
         }
 
-        fprintf(output, "MemTotal: %ld kB\n", memTotal);
-        fprintf(output, "MemFree: %ld kB\n", memFree);
-        fprintf(output, "MemAvailable: %ld kB\n", memAvailable);
-        fprintf(output, "SwapTotal: %ld kB\n", swapTotal);
-        fprintf(output, "SwapFree: %ld kB\n", swapFree);
+        if (bytes != sizeof(data)) {
+            fprintf(stderr, "Incomplete write\n");
+            return 1;
+        }
+    
 
-        fclose(output);
-        sleep(5);
+
+        sleep(1);
     }
     return 0;
 }
