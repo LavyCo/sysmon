@@ -2,14 +2,22 @@
 #include <dirent.h>
 #include <ctype.h>
 #include <unistd.h>
-
+#include <fcntl.h>
+#include <sysmon_ipc.h>
 int main(void)
 {
+    int fd = open(PROC_FIFO_PATH, O_WRONLY);
+
+    if (fd == -1) {
+        perror("open FIFO");
+        return 1;
+    }
     while (1) {
         DIR *dir = opendir("/proc");
 
         if (dir == NULL) {
             perror("opendir");
+            close(fd);
             return 1;
         }
 
@@ -32,20 +40,28 @@ int main(void)
         }
 
         closedir(dir);
+        ProcData data;
 
-        FILE *output = fopen("/tmp/sysmon/proc.dat", "w");
+        data.total_procs = count;
 
-        if (output == NULL) {
-            perror("fopen");
+        ssize_t bytes = write(fd, &data, sizeof(data));
+
+        if (bytes == -1) {
+            perror("write");
+            close(fd);
             return 1;
         }
 
-        fprintf(output, "Active processes: %d\n", count);
+        if (bytes != sizeof(data)) {
+            fprintf(stderr, "Incomplete process data write\n");
+            close(fd);
+            return 1;
+        }
 
-        fclose(output);
 
-       // printf("Active processes: %d\n", count);
-        sleep(5);
+
+      
+        sleep(1);
     }
     return 0;
 }
