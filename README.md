@@ -1,41 +1,13 @@
-# SysMon – Linux System Monitoring Tool
 
-## Overview
-SysMon is a Linux system monitoring project written in C as part of my Embedded Linux course.
+## Phase 3 – Multi-Process IPC
 
-In Phase 1, I built a multi-process application that collects system information from the `/proc` filesystem and displays it in the terminal.
+Implemented a supervised multi-process architecture using Linux IPC.
 
-## Implementation
-The project consists of four programs:
+- **fork() + execve():** `sysmond` automatically launches and manages three sensor processes.
+- **Anonymous Pipe:** Transfers memory data from `mem_sensor` to `sysmond`.
+- **Named Pipes (FIFOs):** Transfer CPU and process statistics.
+- **Binary IPC:** Sensors transmit C structures instead of writing data files.
+- **Live Monitoring:** Displays memory, CPU load, and active process statistics.
+- **Graceful Shutdown:** Handles SIGINT/SIGTERM, terminates child processes, and cleans up FIFOs.
 
-- **mem_sensor** – Reads memory and swap information from `/proc/meminfo`.
-- **cpu_sensor** – Reads CPU load averages from `/proc/loadavg`.
-- **proc_sensor** – Counts active processes by scanning `/proc`.
-- **sysmond** – Reads the collected data and displays a combined system report.
-
-Each sensor runs independently and updates its own file in `/tmp/sysmon/` every 5 seconds.
-
-## Build & Run
-
-Compile the project:
-
-```bash
-make
-```
-
-Run the sensors in the background:
-
-```bash
-./bin/mem_sensor &
-./bin/cpu_sensor &
-./bin/proc_sensor &
-```
-
-Start the monitoring program:
-
-```bash
-./bin/sysmond
-```
-
-## Testing
-I tested the sensors running simultaneously, checked that their output files update every 5 seconds, and verified that `sysmond` displays the latest collected data.
+**Testing:** Successfully verified live data updates, parent-child process relationships, FIFO creation, and cleanup after Ctrl+C.
